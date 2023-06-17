@@ -4,9 +4,8 @@ import { RowDataPacket } from 'mysql2';
 
 export default async function getVisitorHit(req: NextApiRequest, res: NextApiResponse) {
   try {
-
     const todayDate:string = req.query.todayDate as string
-    const yesterdayDate:string = req.query.yesterdayDate as string
+    console.log(todayDate)
     const [[todayArrayCount]] = await pool.query<RowDataPacket[]>(`SELECT COUNT(*) as count FROM visitor_today WHERE REGDATE='${todayDate}'`);
     const [[totalArrayCount]] = await pool.query<RowDataPacket[]>(`SELECT COUNT(*) as count FROM visitor_total WHERE REGDATE='${todayDate}'`);
     if(todayArrayCount.count===0 && todayDate){

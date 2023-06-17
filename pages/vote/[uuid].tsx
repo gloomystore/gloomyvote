@@ -34,7 +34,7 @@ const Todos = ({uuid}:{uuid:string}) => {
       throw new Error(error.message);
     }
   },[uuid]) 
-  const { isLoading, isError, data, error } = useQuery(["todos"], fetchTodoList, {
+  const { isLoading, isError, data, error } = useQuery([uuid], fetchTodoList, {
     refetchOnWindowFocus: false, // react-query는 사용자가 사용하는 윈도우가 다른 곳을 갔다가 다시 화면으로 돌아오면 이 함수를 재실행함. true or false
     retry: 0, // 실패시 재호출 몇번 할지
     onSuccess: data => {

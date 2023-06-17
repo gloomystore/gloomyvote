@@ -4,13 +4,10 @@ import { RowDataPacket } from 'mysql2';
 
 export default async function updateVisitor(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const forwarded = req.headers["x-forwarded-for"] as string
-    // const IPADDRESS = (forwarded ? forwarded.split(/, /)[0] : req.socket.remoteAddress)?.replace(/\:\:ffff:/i,'')
     const IPADDRESS = req.body.IPADDRESS;
     const DATETIME = req.body.DATETIME;
     const DATE = req.body.DATE;
     const YESTERDAY = req.body.YESTERDAY;
-
 
     const insertVisitor = await pool.query<RowDataPacket[]>(`INSERT INTO visitor (IPADDRESS, DATETIME, DATE) VALUES ('${IPADDRESS}', '${DATETIME}', '${DATE}')`);
 
