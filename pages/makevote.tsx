@@ -1,105 +1,150 @@
 import Head from 'next/head'
 import NavBar from '@/components/NavBar'
 import Footer from '@/components/Footer'
-import styles from '@/styles/chat.module.scss'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import styles from '@/styles/vote.module.scss'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import axios from 'axios';
-import { ParsedUrlQuery } from 'querystring';
-import { GetServerSideProps, GetServerSidePropsContext, GetServerSidePropsResult } from 'next';
 
 import Link from 'next/link'
 import { useRouter } from 'next/router'
+
+import { getCookie } from "@/libs/cookie";
+import { randomId } from "@/libs/randomId";
 
 type Props = {
   uuid: string;
 };
 
-// export const getServerSideProps: GetServerSideProps<Props> = async (ctx: GetServerSidePropsContext<ParsedUrlQuery>) => {
-//   const { uuid } = ctx.params || {};
-
-//   // UUID 값에 대한 추가 로직 수행
-
-//   return {
-//     props: {
-//       uuid,
-//     },
-//   } as GetServerSidePropsResult<Props>;;
-// };
-
-
 export default function Chat() {
-  // nextauth 로그
-  const router = useRouter()
- // 유저들 정보
-  const [users,setUsers]:[[{
-    name:string,
-    email:string,
-    image:string,
-  }],Function] = useState([{
-    name:'',
-    email:'',
-    image:'',
-  }])
-
-  // 유저의 정보 가져오기
-  const getUserData = async () => {
-    try {
-      const res = await axios.get(`/api/users/get`);
-      return res.data
-    } catch (err) {
-      console.log(err);
-    }
+  const router = useRouter();
+  const [uuid, setUuid]:[uuid:string, setUuid:Function] = useState('');
+  const titleRef = useRef<HTMLInputElement>(null)
+  const dayRef = useRef<HTMLInputElement>(null)
+  const passwordRef = useRef<HTMLInputElement>(null)
+  type vote = {
+    idx:number,
+    name: string,
+    id: string,
+    textId: string,
+    value: string
   };
+  const [votes, setVotes]:[votes:vote[],setVotes:Function] = useState([])
 
+  useEffect(()=>{
+    const newVote = [
+      {
+        idx:0,
+        name: 'vote',
+        id: 'vote0',
+        textId: 'vote0_text',
+        value: '',
+      },
+      {
+        idx:1,
+        name: 'vote',
+        id: 'vote1',
+        textId: 'vote1_text',
+        value: '',
+      },
+    ]
+    setVotes(newVote)
 
- // 채팅방 정보 만들기
- async function setChatroom(uuid:string,name:string,host:string,guest:string,timestamp:string,time:string){
-  try {
-    const data = {uuid, name, host, guest, timestamp, time}
-    const res = await axios.post(`/api/chatroom/set`, data);
-    return res
-  } catch (err) {
-    console.log(err);
-  }
-};
- // 실제 채팅방 만들기
- async function setChat(parentId:string){
-  try {
-    const {uuid} = getUuid();
-    const data = {
-      parentId,uuid,chat:[]
+    const getUuid = randomId()
+    setUuid(getUuid)
+  },[])
+  
+  const onChangeInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    const newVote = [...votes].map((vote: vote) => {
+      if (vote.textId === id) return { ...vote, value };
+      else return vote;
+    });
+    setVotes(newVote);
+  }, [votes]);
+
+  const addVote = useCallback(() => {
+    if (votes.length > 10) return alert('보기는 10개까지 가능합니다.');
+    else {
+      setVotes((prev: vote[]) => {
+        return [
+          ...prev,
+          {
+            idx: prev.length,
+            name: 'vote',
+            id: `vote${prev.length}`,
+            textId: `vote${prev.length}_text`,
+            value: '',
+          },
+        ];
+      });
     }
-    const res = await axios.post(`/api/chats/set`, data);
-    return res
-  } catch (err) {
-    console.log(err);
-  }
-};
+  }, [votes]);
 
-  function getUuid(){
-    const currentDate = new Date();
-    const year = currentDate.getFullYear();
-    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
-    const day = String(currentDate.getDate()).padStart(2, '0');
-    const hours = String(currentDate.getHours()).padStart(2, '0');
-    const minutes = String(currentDate.getMinutes()).padStart(2, '0');
-    const seconds = String(currentDate.getSeconds()).padStart(2, '0');
-    const milliseconds = String(currentDate.getMilliseconds()).padStart(3, '0');
+  const deleteItem = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      const target = e.target as HTMLButtonElement;
+      const idx = target.dataset.idx;
 
-    const randomNumber = String(Math.floor(Math.random() * 100000)).padStart(5, '0');
+      if (votes.length < 3) {
+        alert('보기는 최소 2개입니다.');
+        return;
+      } else {
+        setVotes((prev: vote[]) => {
+          const updatedVotes = prev.filter((vote) => vote.idx !== Number(idx));
+          return updatedVotes.map((vote, index) => ({
+            ...vote,
+            idx: index,
+            id: `vote${index}`,
+            textId: `vote${index}_text`,
+          }));
+        });
+      }
+    },
+    [votes]
+  );
 
-    const uuid = `${year}${month}${day}${hours}${minutes}${seconds}${milliseconds}_${randomNumber}`;
-    const time = currentDate.toISOString();
-
-    const result = {
-      uuid: uuid,
-      time: time
-    };
-    return result
-  }
-  
-
-  
+  const makeVote = useCallback(async () => {
+    const Confirm = confirm('정말로 투표를 생성하시겠습니까?');
+    if (Confirm) {
+      // uuid -> uuid state사용
+      const voteId = getCookie('voteId'); // owner
+      const fetchip = await axios.get('https://blog.gloomy-store.com/php/getIp.php');
+      const ip = fetchip.data; //ownerip
+      const device = navigator.userAgent //ownerdevice
+      if(!titleRef.current?.value) return alert('제목을 입력해주세요');
+      else if(typeof dayRef.current?.value !== 'string' || !(parseInt(dayRef.current.value) > 0 && parseInt(dayRef.current.value) < 8)) return alert('투표기간은 1일부터 7일 사이로 입력 해주세요')
+      else if(passwordRef.current && !passwordRef.current.value) return alert('비밀번호를 입력해주세요')
+      votes.forEach((e) => {
+        if (!e.value) return alert('아직 채우지 않은 보기가 있습니다.');
+      });
+      const pass = passwordRef.current?.value
+      const currentDate = new Date();
+      const expired = parseInt(dayRef.current.value) * 1000 * 60 * 60 * 24;
+      const expirationDate = new Date(currentDate.getTime() + expired);
+      const destroyDate = new Date(currentDate.getTime() + expired + (7 * 1000 * 60 * 60 * 24));
+      const formattedExpirationDate = expirationDate.toISOString().slice(0, 19).replace('T', ' ');
+      const formattedDestroyDate = destroyDate.toISOString().slice(0, 19).replace('T', ' ');
+      const data = {
+        uuid,
+        voteId,
+        votes,
+        ip,
+        title: titleRef.current.value,
+        pass,
+        device,
+        formattedExpirationDate,
+        formattedDestroyDate,
+      }
+      console.log(data)
+      axios.post('/api/vote/voterooms/set',data)
+      .then(rs=> {
+        if(rs.data.message) {
+          router.push(`/vote/${uuid}`)
+        }
+      })
+      .catch(err => console.log(err))
+    }
+  }, [votes, getCookie]);
 
 
   return (
@@ -111,30 +156,42 @@ export default function Chat() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <NavBar />
-      <div className="wrap">
-        {/* <header className="img-box header mb-100 hp-300">
-          <div className="img-box--words">
-            <h1>Gloomy Chat</h1>
-            <p>Video Call &amp; Text Chat</p>
-          </div>
-        </header> */}
-
-       <section className="section fadeInUp active blink mt-0 pb-10">
-          {/* <h2 className="title-03 mt-0" id="intro">{chatData.name}</h2> */}
-          <div className={`ly-flex-wrap mt-50 ${styles['chatroom-box__wrap']}`}>
-              <article className={`${styles['chatroom-box']}`}>
-                <button className={`${styles['chatroom-box__division']}`}>
-                  <div>
-                    <img src='' alt="profile" width={60} height={60} />
-                  </div>
-                  <div>
-                    <div className="ly-flex-wrap justify-between align-center">
-                      <h3>dddd</h3>
-                      <p className='mt-10'>ddddd</p>
-                    </div>
-                  </div>
-                </button>
-              </article>
+      <div className="wrap pt-100">
+       <section className="section fadeInUp active blink mt-100 pb-10">
+          <h2 className="title-03 mt-0" id="intro">투표번호는 {uuid} 입니다.
+          <br /><span className='t-16 t-light'>(기록해주세요)</span>
+          </h2>
+          <div className={`mt-50 ${styles['vote-room']}`}>
+            <article className={`form-underlined dark`}>
+              <h3 className='mt-10'><input type="text" placeholder='투표 제목을 입력해주세요' ref={titleRef} /></h3>
+              <div className='mt-30'>
+                {
+                  votes.map((vote, idx) =>
+                  <p key={idx}>
+                    <label htmlFor={vote.id}>
+                      <input type="radio" name={vote.name} id={vote.id} disabled />
+                      <input type="text" name={vote.name} id={vote.textId} placeholder='보기를 입력해주세요' value={vote.value} onChange={onChangeInput} />
+                      <button onClick={deleteItem} data-idx={idx}>X</button>
+                    </label>
+                  </p>
+                  )
+                }
+              </div>
+              <div className='mt-30'>
+              <p>
+                <input type="number" ref={dayRef} placeholder='투표기간(일)' min={1} max={7} />
+              </p>
+              <p>
+                <input type="password" ref={passwordRef} placeholder='비밀번호' maxLength={20} />
+              </p>
+              </div>
+              <div className='mt-30'>
+                <button onClick={addVote}>보기 추가하기</button>
+              </div>
+              <div className='mt-30'>
+                <button onClick={makeVote}>투표 생성하기</button>
+              </div>
+            </article>
           </div>
         </section>
       </div>

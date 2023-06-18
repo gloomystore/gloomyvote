@@ -2,92 +2,24 @@ import HeadComponent from "@/components/HeadComponent";
 import { useDispatch, useSelector } from 'react-redux';
 import { scrollBlock } from "@/store/stores/scrollBlock";
 import { setContentLoad } from "@/store/stores/isLoad";
-import { useEffect, useRef, useState, useCallback } from "react";
-import { GetServerSideProps } from "next";
+import { useEffect, useRef, useState, useCallback, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 
+// conponent
 import NavBar from "@/components/NavBar"
 import Footer from "@/components/Footer"
-// import GloomySlider from "gloomy-slider";
+import ErrorBoundary from './ErrorBoundary';
 
-import styles from '@/styles/chat.module.scss'
+// style
+import styles from '@/styles/vote.module.scss'
 
-type Visitor = {
-  IDX: number;
-  TODAY: number;
-  TODAY_HIT: number;
-  REGDATE: number;
-};
-type Visitor2 = {
-  IDX: number;
-  TOTAL: number;
-  TOTAL_HIT: number;
-  REGDATE: number;
-};
-type Props = {
-  statistics: (Visitor | Visitor2)[];
-};
+// libs
+import { setCookie, getCookie } from "@/libs/cookie";
+import { randomId } from "@/libs/randomId";
 
-function getDates(){
-  // 1. 현재 시간(Locale)
-  const curr = new Date();
-
-  // 2. UTC 시간 계산
-  const utc = 
-        curr.getTime() + 
-        (curr.getTimezoneOffset() * 60 * 1000);
-
-  // 3. UTC to KST (UTC + 9시간)
-  const KR_TIME_DIFF = 9 * 60 * 60 * 1000;
-
-  const today = new Date(utc + (KR_TIME_DIFF)); // 오늘
-  const year = today.getFullYear();
-  let month = (today.getMonth()+1).toString();
-  let date = today.getDate().toString();
-  
-  if(month.length === 1) month = '0'+ month;
-  if(date.length === 1) date = '0'+ date;
-  const fullDate = `${year}-${month}-${date}`
-  
-  const yesterday = new Date(today.getTime() - (24 * 60 * 60 * 1000));
-  const yesterdayYear = yesterday.getFullYear();
-  let yesterdayMonth = (yesterday.getMonth()+1).toString();
-  let yesterdayDate = yesterday.getDate().toString()
-  
-  if(yesterdayMonth.length === 1) yesterdayMonth = '0'+ yesterdayMonth;
-  if(yesterdayDate.length === 1) yesterdayDate = '0'+ yesterdayDate;
-  const fullYesterday = `${yesterdayYear}-${yesterdayMonth}-${yesterdayDate}`
-
-  // 시간 구하기
-  let hour = today.getHours().toString()
-  let minute = today.getMinutes().toString()
-  let second = today.getSeconds().toString()
-  if(hour.length === 1) hour = '0'+ hour;
-  if(minute.length === 1) minute = '0'+ minute;
-  if(second.length === 1) second = '0'+ second;
-  const fullDateTime = `${fullDate} ${hour}:${minute}:${second}`
-  
-  return [fullDate,fullYesterday,fullDateTime]
-}
-
-export const getServerSideProps: GetServerSideProps<Props> = async () => {
-  try {
-    const [todayDate, yesterdayDate] = getDates();
-    const statisticsObj = await axios.get<(Visitor | Visitor2)[]>(`${process.env.API_HOST}/api/getVisitorHit?todayDate=${todayDate}&yesterdayDate=${yesterdayDate}`);
-    const statistics = statisticsObj.data;
-    console.log(statistics)
-    
-    return { props: { statistics } };
-  } catch (error) {
-    console.error(error);
-    return { props: { statistics: [] } };
-  }
-};
-
-export default function Home(props:Props) {
+export default function Home() {
 
   /** 로딩, splash 동작 */
   const dispatch = useDispatch();
@@ -100,48 +32,7 @@ export default function Home(props:Props) {
   const scrollBlockState = useSelector((state: RootState) => state.scroll);
   const loadState = useSelector((state: RootState2) => state.load);
 
-  const fetchTodoList = useCallback(async() => {
-    try {
-      // get ip
-      const ipRes = await axios.get('https://blog.gloomy-store.com/php/getIp.php');
-      const ip = ipRes.data;
-      const [todayDate, yesterdayDate,fullDateTime] = getDates();
-      const data = {
-        DATETIME:fullDateTime,
-        DATE:todayDate,
-        YESTERDAY:yesterdayDate,
-        IPADDRESS:ip,
-      }
-      console.log(data)
-      const res =  await axios.post<(Visitor | Visitor2)[]>(`/api/updateVisitor`,data)
-      if (!res.data) {
-        throw new Error("Failed to fetch todos");
-      }
-      const [todayObj, totalObj] = res.data;
-      let todayHit = 0;
-      let totalHit = 0;
-      if ("TODAY" in todayObj) {
-        todayHit = todayObj.TODAY
-      }
-      if ("TOTAL" in totalObj) {
-        totalHit = totalObj.TOTAL
-      }
-      return [todayHit,totalHit];
-    } catch (error:any) {
-      throw new Error(error.message);
-    }
-  },[]) 
-  const { isLoading, isError, data, error } = useQuery(['main'], fetchTodoList, {
-    refetchOnWindowFocus: false,
-    retry: 0, 
-    onSuccess: data => {
-      console.log(data);
-    },
-    onError: (e:Error) => {
-      console.log(e.message);
-    }
-  });
-
+  
   /** fade요소가 등장할 경우 active를 붙인다 */
   const [activeFades, setActiveFades]: [
     Array<boolean>,
@@ -194,6 +85,20 @@ export default function Home(props:Props) {
   }
   /* //스크롤 함수 */
 
+  // 쿠키 여부에 따라 방 노출
+  const [voteRooms, setVoteRooms] = useState([])
+  useEffect(()=>{
+    const voteId = getCookie("voteId");
+    async function getVoterooms() {
+      if(voteId) {
+        console.log(voteId)
+        const res = await axios.post(`/api/vote/voterooms/get/${voteId}`)
+        console.log(res)
+      }
+    }
+    getVoterooms();
+    
+  },[])
 
   return (
     <>
@@ -203,7 +108,7 @@ export default function Home(props:Props) {
       keywords={'javascript, ES6, React, Vue, Nextjs, typescript, 투표'}
       />
       <NavBar />
-      <div className="wrap">
+      <div className="wrap pt-75">
         <header className="img-box header mb-100 hp-300">
           <div className="img-box--words">
             <h1>글 루 미 - 투 표</h1>
@@ -223,24 +128,25 @@ export default function Home(props:Props) {
           onMouseEnter={()=>setActiveBlink([true,activeBlink[1]])}
           onMouseLeave={()=>setActiveBlink([false,activeBlink[1]])}
         >
-          <h2 className={`title-02 ${styles['title-02']}`} id="intro">chat rooms
+          <h2 className={`title-02 ${styles['title-02']}`} id="intro">내가 만든 투표들
           <Link href="/makevote">투표 만들기</Link>
           </h2>
-
-          <div className={`ly-flex-wrap mt-50 ${styles['chatroom-box__wrap']}`}>
-            <article className={`${styles['chatroom-box']}`}>
-              <Link href={`/chat/ddd`} className={`${styles['chatroom-box__division']}`}>
+          <p className="t-13">(쿠키를 삭제하면 사라집니다! 주의!)</p>
+          <div className={`ly-flex-wrap mt-50 ${styles['vote-box__wrap']}`}>
+            <article className={`${styles['vote-box']}`}>
+              <Link href={`/vote/ddd`} className={`${styles['vote-box__division']}`}>
                 <div>
-                  <img src='' alt="profile" width={60} height={60} />
+                  <Image src='/images/logo3.png' alt="profile" width={60} height={54} />
                 </div>
                 <div>
                   <div className="ly-flex-wrap justify-between align-center">
-                    <h3>ddddd</h3>
-                    <p className='mt-10'>dddd</p>
+                    <h3>투표제목이에여!!!</h3>
+                    <p className='mt-10'>2023-05-05 13:10</p>
                   </div>
                   <div className="mt-10">
-                    <h4>대화상대: </h4>
-                    <p className='mt-10'>마지막 메세지:</p>
+                    <h4>투표 참가자: 5명</h4>
+                    <p className='mt-10'>투표 상태: 진행중 / 마감</p>
+                    <p className='mt-10'>투표 번호: 122343434</p>
                   </div>
                 </div>
               </Link>
@@ -440,7 +346,7 @@ export default function Home(props:Props) {
           </div>
         </section>
       </div>
-      <Footer todayHit={data ? data[0] : 0} totalHit={data ? data[1] : 0} />
+      <Footer />
     </>
   )
 }

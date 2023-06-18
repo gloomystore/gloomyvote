@@ -21,7 +21,7 @@ export default function NotFound() {
           </div>
         </header>
       </div>
-      <Footer todayHit={0} totalHit={0} />
+      <Footer />
     </>
   )
 }
