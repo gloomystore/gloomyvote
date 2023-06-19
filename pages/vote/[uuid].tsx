@@ -34,6 +34,8 @@ type voter = {
   uuid: string,
 }
 
+// 1. uuid를 SSR을 위한 props로 전달하려는 목적
+// 2. 유효하지 않은 투표번호면 404페이지를 노출시키기 위함
 export const getServerSideProps: GetServerSideProps<{ uuid: (string | null) }> = async (ctx: GetServerSidePropsContext) => {
   try {
     const { uuid } = ctx.query;
@@ -262,7 +264,7 @@ const Todos = ({uuid}:{uuid:string}) => {
           {
           alreadyVoted ? 
             <article className={`form-underlined dark`}>
-              <h3 className='mt-10'><input type="text" placeholder={fetchVoteData.vote.title} readOnly /></h3>
+              <h3 className='mt-10'><input type="text" placeholder={fetchVoteData.vote.title} readOnly className="w-100" /></h3>
               <div className='mt-30'>
                 {
                   voteResultData.map((vote:vote, idx:number) =>
@@ -287,7 +289,7 @@ const Todos = ({uuid}:{uuid:string}) => {
             </article>
             :
             <article className={`form-underlined dark`}>
-              <h3 className='mt-10'><input type="text" placeholder={fetchVoteData.vote.title} readOnly /></h3>
+              <h3 className='mt-10'><input type="text" placeholder={fetchVoteData.vote.title} readOnly className="w-100" /></h3>
               <div className='mt-30'>
                 {
                   votemenu.map((vote:any, idx:number) =>
