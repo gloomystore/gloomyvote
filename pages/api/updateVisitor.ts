@@ -9,19 +9,28 @@ export default async function updateVisitor(req: NextApiRequest, res: NextApiRes
     const DATE = req.body.DATE;
     const YESTERDAY = req.body.YESTERDAY;
 
+    const [[todayArrayCount]] = await pool.query<RowDataPacket[]>(`SELECT COUNT(*) as count FROM visitor_today WHERE REGDATE='${DATE}'`);
+    const [[totalArrayCount]] = await pool.query<RowDataPacket[]>(`SELECT COUNT(*) as count FROM visitor_total WHERE REGDATE='${DATE}'`);
+    if(todayArrayCount.count===0 && DATE){
+      const insertToday = await pool.query<RowDataPacket[]>(`INSERT INTO visitor_today (TODAY, TODAY_HIT, REGDATE) VALUES (1, 1, '${DATE}')`);
+    } 
+    if(totalArrayCount.count===0 && DATE){
+      const insertTotal = await pool.query<RowDataPacket[]>(`INSERT INTO visitor_total (TOTAL, TOTAL_HIT, REGDATE) VALUES (1, 1, '${DATE}')`);
+    } 
+
     const insertVisitor = await pool.query<RowDataPacket[]>(`INSERT INTO visitor (IPADDRESS, DATETIME, DATE) VALUES ('${IPADDRESS}', '${DATETIME}', '${DATE}')`);
 
     /** update today table */
-    const [[todayArrayCount]] = await pool.query<RowDataPacket[]>(`SELECT COUNT( DISTINCT IPADDRESS ) as count FROM visitor WHERE DATE='${DATE}'`);
+    const [[todayArray]] = await pool.query<RowDataPacket[]>(`SELECT COUNT( DISTINCT IPADDRESS ) as count FROM visitor WHERE DATE='${DATE}'`);
     const [[todayHitArrayCount]] = await pool.query<RowDataPacket[]>(`SELECT COUNT(*) as count FROM visitor WHERE DATE='${DATE}'`);
-    const updateToday = await pool.query<RowDataPacket[]>(`UPDATE visitor_today SET TODAY = '${todayArrayCount.count}', TODAY_HIT = '${todayHitArrayCount.count}' WHERE REGDATE='${DATE}'`)
+    const updateToday = await pool.query<RowDataPacket[]>(`UPDATE visitor_today SET TODAY = '${todayArray.count}', TODAY_HIT = '${todayHitArrayCount.count}' WHERE REGDATE='${DATE}'`)
     /** update total table */
-    const [[totalArrayCount]] = await pool.query<RowDataPacket[]>(`SELECT TODAY FROM visitor_today WHERE REGDATE='${DATE}'`);
+    const [[totalArray]] = await pool.query<RowDataPacket[]>(`SELECT TODAY FROM visitor_today WHERE REGDATE='${DATE}'`);
     const [[totalHitArrayCount]] = await pool.query<RowDataPacket[]>(`SELECT TODAY_HIT FROM visitor_today WHERE REGDATE='${DATE}'`);
     const [[totalArrayCountYesterday]] = await pool.query<RowDataPacket[]>(`SELECT TOTAL FROM visitor_total WHERE REGDATE='${YESTERDAY}'`);
     const [[totalHitArrayCountYesterday]] = await pool.query<RowDataPacket[]>(`SELECT TOTAL_HIT FROM visitor_total WHERE REGDATE='${YESTERDAY}'`);
 
-    const TOTAL = totalArrayCount.TODAY+totalArrayCountYesterday.TOTAL
+    const TOTAL = totalArray.TODAY+totalArrayCountYesterday.TOTAL
     const TOTAL_HIT = totalHitArrayCount.TODAY_HIT+totalHitArrayCountYesterday.TOTAL_HIT
     
     const updateTotal = await pool.query<RowDataPacket[]>(`UPDATE visitor_total SET TOTAL = '${TOTAL}', TOTAL_HIT = '${TOTAL_HIT}' WHERE REGDATE='${DATE}'`)

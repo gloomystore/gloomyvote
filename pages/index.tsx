@@ -92,8 +92,11 @@ export default function Home() {
     async function getVoterooms() {
       if(voteId) {
         console.log(voteId)
-        const res = await axios.post(`/api/vote/voterooms/get/${voteId}`)
-        console.log(res)
+        const res = await axios.post(`/api/vote/myvoteroom/get/${voteId}`)
+        console.log(res.data)
+        if(res.data.vote) {
+          setVoteRooms(res.data.vote)
+        }
       }
     }
     getVoterooms();
@@ -129,28 +132,40 @@ export default function Home() {
           onMouseLeave={()=>setActiveBlink([false,activeBlink[1]])}
         >
           <h2 className={`title-02 ${styles['title-02']}`} id="intro">내가 만든 투표들
-          <Link href="/makevote">투표 만들기</Link>
+          <Link href="/makevote" className='f-right'>투표 만들기</Link>
           </h2>
           <p className="t-13">(쿠키를 삭제하면 사라집니다! 주의!)</p>
           <div className={`ly-flex-wrap mt-50 ${styles['vote-box__wrap']}`}>
-            <article className={`${styles['vote-box']}`}>
-              <Link href={`/vote/ddd`} className={`${styles['vote-box__division']}`}>
-                <div>
-                  <Image src='/images/logo3.png' alt="profile" width={60} height={54} />
-                </div>
-                <div>
-                  <div className="ly-flex-wrap justify-between align-center">
-                    <h3>투표제목이에여!!!</h3>
-                    <p className='mt-10'>2023-05-05 13:10</p>
+            {
+              // 내가 만든 투표가 있으면 노출
+              voteRooms.length > 0 ?
+              voteRooms.map((voteData:any,idx:number)=> 
+              <article className={`${styles['vote-box']}`} key={idx}>
+                <Link href={`/vote/${voteData.uuid}`} className={`${styles['vote-box__division']}`}>
+                  <div>
+                    <Image src='/images/logo3.png' alt="profile" width={60} height={54} />
                   </div>
-                  <div className="mt-10">
-                    <h4>투표 참가자: 5명</h4>
-                    <p className='mt-10'>투표 상태: 진행중 / 마감</p>
-                    <p className='mt-10'>투표 번호: 122343434</p>
+                  <div>
+                    <div className="ly-flex-wrap justify-between align-center">
+                      <h3>{voteData.title}</h3>
+                      <p className='mt-10'>{voteData.title}</p>
+                    </div>
+                    <div className="mt-10">
+                      <h4>투표 참가자: {voteData.title}명</h4>
+                      <p className='mt-10'>투표 상태: {voteData.title ? '진행중' : '마감'}</p>
+                      <p className='mt-10'>투표 번호: {voteData.uuid}</p>
+                    </div>
                   </div>
-                </div>
-              </Link>
-            </article>
+                </Link>
+              </article>
+              )
+              :
+              // 내가 만든 투표가 없으면 노출
+              <>
+                <p>내가 만든 투표가 없거나, 쿠키에서 데이터를 추출할 수 없습니다.</p>
+              </>
+            }
+            
           </div>
         </section>
 
@@ -166,6 +181,12 @@ export default function Home() {
           onMouseEnter={()=>setActiveBlink([activeBlink[0],true])}
           onMouseLeave={()=>setActiveBlink([activeBlink[0],false])}
         >
+          <h1>사용한 기술:
+            <pre>
+mysql, nextjs13, 쿠키, react query, 카카오 공유
+            </pre>
+
+          </h1>
           <h2 className="title-02" id="skill">Used Stack</h2>
           <h3 className="title-03">FE Stack</h3>
           <div className="table">

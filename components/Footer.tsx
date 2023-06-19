@@ -1,8 +1,7 @@
 'use client'
-import { useCallback, Suspense } from 'react'
+import { useCallback, useEffect } from 'react'
 import styles from '@/styles/Footer.module.scss'
 import Image from 'next/image'
-import { GetServerSideProps } from "next";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 
@@ -18,9 +17,6 @@ type Visitor2 = {
   TOTAL: number;
   TOTAL_HIT: number;
   REGDATE: number;
-};
-type Props = {
-  statistics: (Visitor | Visitor2)[];
 };
 
 // 시간을 계산하는 함수
@@ -66,22 +62,8 @@ function getDates(){
   return [fullDate,fullYesterday,fullDateTime]
 }
 
-export const getServerSideProps: GetServerSideProps<Props> = async () => {
-  try {
-    const [todayDate, yesterdayDate] = getDates();
-    const statisticsObj = await axios.get<(Visitor | Visitor2)[]>(`${process.env.API_HOST}/api/getVisitorHit?todayDate=${todayDate}&yesterdayDate=${yesterdayDate}`);
-    const statistics = statisticsObj.data;
-    console.log(statistics)
-    
-    return { props: { statistics } };
-  } catch (error) {
-    console.error(error);
-    return { props: { statistics: [] } };
-  }
-};
-
 export default function Footer() {
-  const fetchTodoList = useCallback(async() => {
+  const fetchStatistics = useCallback(async() => {
     try {
       // get ip
       const ipRes = await axios.get('https://blog.gloomy-store.com/php/getIp.php');
@@ -93,9 +75,10 @@ export default function Footer() {
         YESTERDAY:yesterdayDate,
         IPADDRESS:ip,
       }
+      // console.log(data)
       const res =  await axios.post<(Visitor | Visitor2)[]>(`/api/updateVisitor`,data)
       if (!res.data) {
-        throw new Error("Failed to fetch todos");
+        throw new Error("Failed to fetch Statistics");
       }
       const [todayObj, totalObj] = res.data;
       let todayHit = 0;
@@ -111,7 +94,7 @@ export default function Footer() {
       throw new Error(error.message);
     }
   },[])
-  const fetchStatistics = useQuery(['statistics'], fetchTodoList, {
+  const queryStatistics = useQuery(['statistics'], fetchStatistics, {
     refetchOnWindowFocus: false,
     retry: 0, 
     onSuccess: data => {
@@ -121,10 +104,10 @@ export default function Footer() {
       console.log(e.message);
     }
   });
-  const fetchStatisticsIsLoading = fetchStatistics.isLoading
-  const fetchStatisticsIsError = fetchStatistics.isError
-  const fetchStatisticsError = fetchStatistics.error
-  const fetchStatisticsData = fetchStatistics.data
+  const fetchStatisticsIsLoading = queryStatistics.isLoading
+  const fetchStatisticsIsError = queryStatistics.isError
+  const fetchStatisticsError = queryStatistics.error
+  const fetchStatisticsData = queryStatistics.data
 
   return (
     <footer className={`${styles["footer"]}`} id="contact">
@@ -136,19 +119,23 @@ export default function Footer() {
         </a>
       </article>
       <article className={`${styles["footer-desc"]}`}>
-        <Suspense fallback={<div>Loading...</div>}>
-            {fetchStatisticsIsLoading ? (
-              <div>Loading...</div>
-            ) : (
+        {fetchStatisticsIsLoading ? (
+          <div>Loading...</div>
+        ) : (
+          fetchStatisticsIsError ? (
+            <div>404</div>
+          ) : (
+            fetchStatisticsData && (
               <h5>
-                글루미투표{' '}
+                글루미투표
                 <em>
-                  <span>today: {fetchStatisticsData ? fetchStatisticsData[0] : 0}</span>
-                  <span>total: {fetchStatisticsData ? fetchStatisticsData[1] : 0}</span>
+                  <span>today: {fetchStatisticsData[0]}</span>
+                  <span>total: {fetchStatisticsData[1]}</span>
                 </em>
               </h5>
-            )}
-          </Suspense>
+            )
+          )
+        )}
         <p><a href="tel:01043431354">TEL : 010-4343-1354</a></p>
         <p><a href="mailto:serenity90s@naver.com">EMAIL : serenity90s@naver.com</a></p>
         <p>COPYRIGHT © 2019 YOUNG e Design CO., LTD. All Rights Reserved. Designed by YOUNG e Design</p>

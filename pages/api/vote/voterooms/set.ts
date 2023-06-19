@@ -16,7 +16,7 @@ export default async function setVoteRoom(req: NextApiRequest, res: NextApiRespo
     const { uuid, voteId, title, votes, ip, pass, device, formattedExpirationDate, formattedDestroyDate } = req.body;
     const hashedPassword = await hashPassword(pass);
     const createVoteQuery = await pool.query<RowDataPacket[]>(
-      'INSERT INTO vote (uuid, title, owner, ownerip, ownerdevice, password,  expire, destroy) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO vote (uuid, owner, title, ownerip, ownerdevice, password,  expire, destroy) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [uuid, voteId, title, ip, device, hashedPassword, formattedExpirationDate, formattedDestroyDate]
     );
     

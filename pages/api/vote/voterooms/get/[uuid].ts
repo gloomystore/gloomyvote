@@ -13,7 +13,7 @@ export default async function getVisitorHit(req: NextApiRequest, res: NextApiRes
     res.status(200).json({vote:vote[0],votemenu,voter});
   } catch (error) {
     console.error(error);
-    res.status(500).json([]);
+    res.status(500).json({});
     // res.status(500).json({ error });
   }
 }

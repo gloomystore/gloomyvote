@@ -199,6 +199,17 @@ b, strong {
 .t-light {
   font-weight: 300;
 }
+.t-center {
+  text-align: center;
+}
+
+.d-block {
+  display: block;
+}
+
+.f-right {
+  float: right;
+}
 .title-area {
   display: block;
     padding-left: 20px;
@@ -794,7 +805,7 @@ $widthPixelNameMap: (
   "wp": "width",
 );
 @mixin generate($widthPixelNameMap: (), $size: ()) {
-  @each $preKey, $preValue in $widthNameMap {
+  @each $preKey, $preValue in $widthPixelNameMap {
     @each $pixel in $size {
       .#{$preKey}-#{$pixel} {
         #{$preValue}: #{$pixel}#{'px'} !important;
@@ -802,12 +813,7 @@ $widthPixelNameMap: (
     }
   }
 }
-@include generate($widthNameMap, $size);
-@each $fontSize in $size {
-  .t-#{$fontSize} {
-    font-size: #{$fontSize}#{'px'} !important;
-  }
-}
+@include generate($widthPixelNameMap, $size);
 
 // sizing -------------------
 @function heightSize($start, $end) {

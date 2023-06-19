@@ -36,6 +36,9 @@ export const share = (data: Data) => {
         resolve(true);
         return;
       }
+      else {
+        
+      }
       resolve(false);
     }
   );
