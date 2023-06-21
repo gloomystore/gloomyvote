@@ -10,7 +10,7 @@ export const shareKakao = (route:string, title:string) => { // url이 id값에 �
       content: {
         title: title, // 인자값으로 받은 title
         description: title, // 인자값으로 받은 title
-        imageUrl: "https://blog.gloomy-store.com/images/logo3.png",
+        imageUrl: "https://blog.gloomy-store.com/images/thumb.jpg",
         link: {
           mobileWebUrl: route, // 인자값으로 받은 route(uri 형태)
           webUrl: route

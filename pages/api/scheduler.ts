@@ -4,7 +4,7 @@ import pool from './db/mysql';
 import winston from 'winston';
 
 // 로그 파일 경로 설정
-const logFilePath = '/volume1/web/gloomy-store/www/react/gloomyvote/log';
+const logFilePath = process.env.NEXT_PUBLIC_LOGFILE_PATH;
 
 // 로그 출력 형식 설정
 const logFormat = winston.format.printf(({ level, message, timestamp }) => {

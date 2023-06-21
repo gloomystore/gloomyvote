@@ -187,6 +187,9 @@ b, strong {
 .t-red {
   color: #b62200;
 }
+.t-blue {
+  color: blue;
+}
 .t-white {
   color: $-c-white;
 }
@@ -689,6 +692,19 @@ b, strong {
       }
     }
   }
+}
+.button {
+  background: url('/images/bg/galaxy.gif');
+  border-radius: 6px;
+  border: none;
+  padding: 7px 8px;
+  font-weight: bold;
+  font-size: 16px;
+  color: $-c-white;
+  cursor: pointer;
+}
+.border {
+  border: 1px solid $-c-white;
 }
 
 // sizing -------------------
